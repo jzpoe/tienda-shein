@@ -13,9 +13,10 @@ const PORT = process.env.PORT
 
 app.use(express.json())
 app.use(cors())
+
 connectDB()
 
-app.listen(PORT, () => {
+ app.listen(PORT, () => {
     console.log("servidor conectado exitosamente", PORT)
 })
 

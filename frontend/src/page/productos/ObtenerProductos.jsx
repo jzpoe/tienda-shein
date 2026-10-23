@@ -48,7 +48,7 @@ export const ObtenerProductos = () => {
         setModalEditarOpen(false)
     }
 
-
+    console.log("Producto:", producto);
     return (
         <>
             <section>
@@ -97,7 +97,7 @@ export const ObtenerProductos = () => {
 
                                 <div className="mb-4">
                                     <img
-                                        src={`https://api-inventario-shein.rodantech.co/uploads/productos/${productosObtenidos.imagen}`}
+                                        src={`https://api-inventario-shein.rodantech.co${productosObtenidos.imagen}`}
                                         alt={productosObtenidos.nombre}
                                         className="w-full h-56 object-contain rounded-xl bg-gray-50"
                                     />

@@ -32,6 +32,10 @@ const poductoSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
+    imagen: {
+    type: String,
+    default: null
+},
     variantes: [
         {
             atributos: {

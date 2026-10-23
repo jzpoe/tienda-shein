@@ -5,14 +5,16 @@ import Producto from "../../models/productos_model/produtos.model.js"
 export const ingresar_producto = async (req, res) => {
 
     try {
-        const productos_body = req.body
+        const productos_body = JSON.parse(req.body.producto);
 
         const nuevoObjeto = {
             ...productos_body,
+            imagen: req.file ? `/uploads/productos/${req.file.filename}` : null,
             creadoPor: req.usuario.id,
             actualizadoPor: req.usuario.id,
             negocioId: req.usuario.negocioId
-        }
+        };
+
 
         const productos_db = await Producto.create(nuevoObjeto);
 

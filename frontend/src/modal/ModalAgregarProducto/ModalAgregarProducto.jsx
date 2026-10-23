@@ -83,7 +83,14 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
                 return;
             }
 
-            await agregarProductos(productos)
+            const formData = new FormData();
+
+            formData.append("producto", JSON.stringify(productos));
+
+            if (imagenProducto) {
+                formData.append("imagen", imagenProducto);
+            }
+            await agregarProductos(formData);
             toast.success('¡Productos guardado con éxito!');
 
 

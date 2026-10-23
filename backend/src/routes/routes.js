@@ -11,12 +11,13 @@ import { authMiddleware } from "../auth_middleware/auth.middleware.js";
 import { auth_administrador } from "../auth_middleware/auth.administrador.js";
 import { obtener_usuarios } from "../controllers/usuario/usuarios.verUsuarios.js";
 import { registrar_negocio } from "../controllers/negocio_controller/registrar_negocio.controller.js";
+import subirImagen from "../image_middleware/subirImagen.js";
 
 const router = express.Router();
 
 
 //crear productos
-router.post("/productos",authMiddleware,  auth_administrador, ingresar_producto);
+router.post("/productos",authMiddleware,  auth_administrador,subirImagen.single("imagen"), ingresar_producto);
 router.get("/productos",authMiddleware, obtener_productos);
 // router.put("/productos/:id", authMiddleware, obtener_producto_id)
 router.patch("/productoS/:id",authMiddleware, editar_producto)

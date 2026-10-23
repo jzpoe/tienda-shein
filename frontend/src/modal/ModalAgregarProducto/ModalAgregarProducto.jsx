@@ -8,6 +8,7 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
     const [variantes, setVariantes] = useState([]);
     const [imagenProducto, setImagenProducto] = useState(null);
     const [vistaPrevia, setVistaPrevia] = useState("");
+    const [guardando, setGuardando] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -34,6 +35,9 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (guardando) return;
+
+        setGuardando(true);
 
         try {
 
@@ -109,6 +113,8 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
         } catch (error) {
             "Error al crear el producto:",
                 error.response?.data?.message || error.message
+        } finally {
+            setGuardando(false);
         }
 
     }
@@ -659,9 +665,13 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
 
                                 <button
                                     type="submit"
-                                    className="min-h-11 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                    disabled={guardando}
+                                    className={`min-h-11 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-200 ${guardando
+                                            ? "cursor-not-allowed bg-gray-400"
+                                            : "bg-blue-600 hover:bg-blue-700"
+                                        }`}
                                 >
-                                    Crear producto
+                                    {guardando ? "Guardando producto..." : "Crear producto"}
                                 </button>
 
                             </div>

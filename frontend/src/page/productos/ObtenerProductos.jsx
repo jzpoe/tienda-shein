@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Pencil, Trash2 } from 'lucide-react';
-import { obtenerProductos } from "../../services/productosServices"
+import { eliminarProductos, obtenerProductos } from "../../services/productosServices"
 import { ModalAgregarProducto } from "../../modal/ModalAgregarProducto/ModalAgregarProducto";
 import { EditarProducto } from "../../modal/modalEditarProducto";
 import Swal from "sweetalert2";

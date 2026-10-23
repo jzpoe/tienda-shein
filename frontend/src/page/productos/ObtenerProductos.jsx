@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { obtenerProductos } from "../../services/productosServices"
 import { ModalAgregarProducto } from "../../modal/ModalAgregarProducto/ModalAgregarProducto";
 import { EditarProducto } from "../../modal/modalEditarProducto";
+import Swal from "sweetalert2";
+
 
 
 export const ObtenerProductos = () => {
@@ -48,7 +50,54 @@ export const ObtenerProductos = () => {
         setModalEditarOpen(false)
     }
 
-    console.log("Producto:", producto);
+    const eliminarProducto = async (producto) => {
+        const resultado = await Swal.fire({
+            title: "¿Estás seguro?",
+            text: `¿Deseas eliminar el producto "${producto.nombre}"? Esta acción no se puede deshacer.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+            reverseButtons: true
+        });
+
+        // Si cancela, no hacemos nada
+        if (!resultado.isConfirmed) return;
+
+        try {
+            // Solicitar la eliminación al backend
+            await eliminarProductos(producto._id);
+
+            // Actualizar las cards sin recargar la página
+            setProducto((productosActuales) =>
+                productosActuales.filter(
+                    (item) => item._id !== producto._id
+                )
+            );
+
+            await Swal.fire({
+                title: "¡Eliminado!",
+                text: "El producto se eliminó correctamente.",
+                icon: "success",
+                confirmButtonColor: "#2563eb"
+            });
+
+        } catch (error) {
+            console.error("Error al eliminar el producto:", error);
+
+            Swal.fire({
+                title: "Error",
+                text: error.response?.data?.message ||
+                    "No se pudo eliminar el producto.",
+                icon: "error",
+                confirmButtonColor: "#2563eb"
+            });
+        }
+    };
+
+
     return (
         <>
             <section>
@@ -80,9 +129,6 @@ export const ObtenerProductos = () => {
                     </div>
 
                 </div>
-
-
-
 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -191,9 +237,25 @@ export const ObtenerProductos = () => {
                                     </p>
 
                                 </div>
-                                <div>
-                                    <button onClick={() => abrirModalEditar(productosObtenidos)}>
-                                        <Pencil />
+                                <div className="flex justify-end gap-3 mt-4">
+                                    {/* Botón editar */}
+                                    <button
+                                        type="button"
+                                        onClick={() => abrirModalEditar(productosObtenidos)}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                        title="Editar producto"
+                                    >
+                                        <Pencil size={20} />
+                                    </button>
+
+                                    {/* Botón eliminar */}
+                                    <button
+                                        type="button"
+                                        onClick={() => eliminarProducto(productosObtenidos)}
+                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                        title="Eliminar producto"
+                                    >
+                                        <Trash2 size={20} />
                                     </button>
                                 </div>
 

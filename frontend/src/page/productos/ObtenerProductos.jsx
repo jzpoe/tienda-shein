@@ -8,8 +8,8 @@ import { EditarProducto } from "../../modal/modalEditarProducto";
 export const ObtenerProductos = () => {
     const [producto, setProducto] = useState([]);
     const [modalAgregarProductosOpen, setModalAgregarProductosOpen] = useState(false);
-    const [modalEditarOpen, setModalEditarOpen]= useState(false);
-    const [productoSeleccionado, setProductoSeleccionado]= useState(null);
+    const [modalEditarOpen, setModalEditarOpen] = useState(false);
+    const [productoSeleccionado, setProductoSeleccionado] = useState(null);
 
     const productosObtener = async () => {
 
@@ -38,13 +38,13 @@ export const ObtenerProductos = () => {
         setModalAgregarProductosOpen(false)
     }
 
-    const abrirModalEditar=(producto)=>{
+    const abrirModalEditar = (producto) => {
         setProductoSeleccionado(producto)
         setModalEditarOpen(true)
-        
+
     }
 
-    const cerrarModalEditar=()=>{
+    const cerrarModalEditar = () => {
         setModalEditarOpen(false)
     }
 
@@ -94,6 +94,14 @@ export const ObtenerProductos = () => {
                                 key={productosObtenidos._id}
                                 className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
                             >
+
+                                <div className="mb-4">
+                                    <img
+                                        src={`https://api-inventario-shein.rodantech.co/uploads/productos/${productosObtenidos.imagen}`}
+                                        alt={productosObtenidos.nombre}
+                                        className="w-full h-56 object-contain rounded-xl bg-gray-50"
+                                    />
+                                </div>
 
                                 <div className="flex justify-between items-start gap-4">
 
@@ -184,7 +192,7 @@ export const ObtenerProductos = () => {
 
                                 </div>
                                 <div>
-                                    <button onClick={() =>  abrirModalEditar(productosObtenidos) }>
+                                    <button onClick={() => abrirModalEditar(productosObtenidos)}>
                                         <Pencil />
                                     </button>
                                 </div>
@@ -204,11 +212,11 @@ export const ObtenerProductos = () => {
                 />
 
                 <EditarProducto
-                open={modalEditarOpen}
+                    open={modalEditarOpen}
                     productos={productoSeleccionado}
                     cerrarModalEditar={cerrarModalEditar}
 
-                    />
+                />
 
 
             </section>

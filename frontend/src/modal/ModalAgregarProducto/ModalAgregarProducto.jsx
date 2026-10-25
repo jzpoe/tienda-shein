@@ -1,11 +1,63 @@
 import { useEffect, useState } from "react";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 import { agregarProductos } from "../../services/productosServices";
 
-export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, actualizarProductos }) => {
+export const ModalAgregarProducto = ({
+    openModalProducto,
+    cerrarModalProducto,
+    actualizarProductos
+}) => {
+    const [datosProducto, setDatosProducto] = useState({
+        nombre: "",
+        categoria: "",
+        subcategoria: "",
+        precio: ""
+    });
 
-    const [datosProducto, setDatosProducto] = useState({ nombre: "", categoria: "", precio: "" });
+    const categorias = [
+        "Ropa",
+        "Ropa interior",
+        "Joyas",
+        "Calzado",
+        "Accesorios",
+        "Electrónica",
+        "Hogar",
+        "Belleza",
+        "Deportes",
+        "Juguetes",
+        "Mercado",
+        "Otras categorías"
+    ];
+
+    const subcategorias = {
+        "Ropa": ["Camisetas", "Polos", "Pantalones", "Vestidos"],
+        "Ropa interior": ["Brasieres", "Panties", "Bóxeres"],
+        "Joyas": ["Anillos", "Collares", "Pulseras", "Aretes"],
+        "Calzado": ["Tenis", "Sandalias", "Botas"],
+        "Accesorios": ["Bolsos", "Cinturones", "Gafas"],
+        "Electrónica": ["Celulares", "Audífonos", "Accesorios electrónicos"],
+        "Hogar": ["Decoración", "Cocina", "Organización"],
+        "Belleza": ["Maquillaje", "Cuidado facial", "Cuidado capilar"],
+        "Deportes": ["Ropa deportiva", "Accesorios deportivos"],
+        "Juguetes": ["Muñecos", "Juegos de mesa"],
+        "Mercado": ["Alimentos", "Bebidas"],
+        "Otras categorías": ["Otros"]
+    };
+
+    // Cada atributo puede tener varias opciones: Color -> Negro, Blanco; Talla -> S, M, L.
+    const [atributosConfigurados, setAtributosConfigurados] = useState([]);
+    const [nuevoNombreAtributo, setNuevoNombreAtributo] = useState("");
+    const [tipoAtributoSeleccionado, setTipoAtributoSeleccionado] = useState("Color");
     const [variantes, setVariantes] = useState([]);
+
+    // Opciones listas para seleccionar; también se pueden crear opciones personalizadas.
+    const opcionesPredeterminadas = {
+        Color: ["Negro", "Blanco", "Azul", "Rojo", "Verde", "Amarillo", "Rosado", "Gris", "Beige", "Morado", "Naranja", "Café"],
+        Talla: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+        Material: ["Algodón", "Poliéster", "Cuero", "Lana", "Lino", "Denim"],
+        Dimensiones: [],
+        Capacidad: []
+    };
     const [imagenProducto, setImagenProducto] = useState(null);
     const [vistaPrevia, setVistaPrevia] = useState("");
     const [guardando, setGuardando] = useState(false);
@@ -13,199 +65,264 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        setDatosProducto({
-            ...datosProducto,
-            [name]: value
-        });
+        setDatosProducto((actual) => ({
+            ...actual,
+            [name]: value,
+            ...(name === "categoria" ? { subcategoria: "" } : {})
+        }));
     };
 
     const handleImagenChange = (e) => {
-        const archivo = e.target.files[0];
-
+        const archivo = e.target.files?.[0];
         if (!archivo) return;
 
-        if (!archivo.type.startsWith("image/")) {
-            toast.error("Selecciona un archivo de imagen válido");
+        const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
+        if (!tiposPermitidos.includes(archivo.type)) {
+            toast.error("Selecciona una imagen JPG, PNG o WEBP");
+            e.target.value = "";
+            return;
+        }
+
+        if (archivo.size > 5 * 1024 * 1024) {
+            toast.error("La imagen no puede superar los 5 MB");
+            e.target.value = "";
             return;
         }
 
         setImagenProducto(archivo);
-        setVistaPrevia(URL.createObjectURL(archivo));
+        setVistaPrevia((anterior) => {
+            if (anterior) URL.revokeObjectURL(anterior);
+            return URL.createObjectURL(archivo);
+        });
+    };
+
+    useEffect(() => {
+        return () => {
+            if (vistaPrevia) URL.revokeObjectURL(vistaPrevia);
+        };
+    }, [vistaPrevia]);
+
+    const agregarAtributoConfigurado = (nombreRecibido = "") => {
+        const nombre = (nombreRecibido || nuevoNombreAtributo).trim();
+        if (!nombre) {
+            toast.error("Selecciona una característica o escribe una nueva");
+            return;
+        }
+
+        const existe = atributosConfigurados.some(
+            (atributo) => atributo.nombre.toLowerCase() === nombre.toLowerCase()
+        );
+
+        if (existe) {
+            toast.error("Ese atributo ya existe");
+            return;
+        }
+
+        setAtributosConfigurados((actuales) => [
+            ...actuales,
+            { nombre, valores: [], nuevoValor: "" }
+        ]);
+        setNuevoNombreAtributo("");
+    };
+
+    const agregarOpcionPredeterminada = (index, valor) => {
+        const atributo = atributosConfigurados[index];
+
+        if (atributo.valores.some((actual) => actual.toLowerCase() === valor.toLowerCase())) {
+            return;
+        }
+
+        setAtributosConfigurados((actuales) =>
+            actuales.map((item, i) =>
+                i === index
+                    ? { ...item, valores: [...item.valores, valor] }
+                    : item
+            )
+        );
+    };
+
+    const actualizarNuevoValor = (index, valor) => {
+        setAtributosConfigurados((actuales) =>
+            actuales.map((atributo, i) =>
+                i === index ? { ...atributo, nuevoValor: valor } : atributo
+            )
+        );
+    };
+
+    const agregarOpcion = (index) => {
+        const atributo = atributosConfigurados[index];
+        const valor = atributo.nuevoValor.trim();
+
+        if (!valor) {
+            toast.error("Escribe una opción antes de agregarla");
+            return;
+        }
+
+        if (atributo.valores.some((actual) => actual.toLowerCase() === valor.toLowerCase())) {
+            toast.error("Esa opción ya existe en este atributo");
+            return;
+        }
+
+        setAtributosConfigurados((actuales) =>
+            actuales.map((item, i) =>
+                i === index
+                    ? { ...item, valores: [...item.valores, valor], nuevoValor: "" }
+                    : item
+            )
+        );
+    };
+
+    const eliminarOpcion = (indexAtributo, valorEliminar) => {
+        setAtributosConfigurados((actuales) =>
+            actuales.map((atributo, i) =>
+                i === indexAtributo
+                    ? { ...atributo, valores: atributo.valores.filter((valor) => valor !== valorEliminar) }
+                    : atributo
+            )
+        );
+    };
+
+    const eliminarAtributo = (indexEliminar) => {
+        setAtributosConfigurados((actuales) =>
+            actuales.filter((_, index) => index !== indexEliminar)
+        );
+    };
+
+    const generarCombinaciones = () => {
+        const atributosValidos = atributosConfigurados.filter(
+            (atributo) => atributo.nombre.trim() && atributo.valores.length > 0
+        );
+
+        if (atributosValidos.length === 0) {
+            toast.error("Agrega al menos un atributo con una opción");
+            return;
+        }
+
+        // Evita combinaciones excesivas por errores de configuración.
+        const cantidad = atributosValidos.reduce(
+            (total, atributo) => total * atributo.valores.length,
+            1
+        );
+
+        if (cantidad > 300) {
+            toast.error("Se generarían más de 300 combinaciones. Reduce las opciones.");
+            return;
+        }
+
+        const combinaciones = atributosValidos.reduce(
+            (acumuladas, atributo) =>
+                acumuladas.flatMap((combinacion) =>
+                    atributo.valores.map((valor) => ({
+                        ...combinacion,
+                        [atributo.nombre]: valor
+                    }))
+                ),
+            [{}]
+        );
+
+        // Conserva el stock ya escrito si se vuelve a generar la misma combinación.
+        const variantesNuevas = combinaciones.map((atributos) => {
+            const existente = variantes.find(
+                (variante) =>
+                    JSON.stringify(Object.entries(variante.atributos).sort()) ===
+                    JSON.stringify(Object.entries(atributos).sort())
+            );
+
+            return {
+                atributos,
+                stock: existente ? existente.stock : ""
+            };
+        });
+
+        setVariantes(variantesNuevas);
+        toast.success(`${variantesNuevas.length} combinaciones generadas`);
+    };
+
+    const actualizarStock = (index, valor) => {
+        setVariantes((actuales) =>
+            actuales.map((variante, i) =>
+                i === index ? { ...variante, stock: valor } : variante
+            )
+        );
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
         if (guardando) return;
+
+        if (!datosProducto.nombre.trim() || !datosProducto.categoria.trim() || !datosProducto.precio.trim()) {
+            toast.error("Completa el nombre, la categoría y el precio");
+            return;
+        }
+
+        const precio = Number(datosProducto.precio);
+        if (!Number.isFinite(precio) || precio <= 0) {
+            toast.error("Ingresa un precio válido mayor que cero");
+            return;
+        }
+
+        if (variantes.length === 0) {
+            toast.error("Genera al menos una combinación de variantes");
+            return;
+        }
+
+        const stockInvalido = variantes.some(
+            (variante) =>
+                variante.stock === "" ||
+                !Number.isInteger(Number(variante.stock)) ||
+                Number(variante.stock) < 0
+        );
+
+        if (stockInvalido) {
+            toast.error("Ingresa un stock entero igual o mayor que cero en cada combinación");
+            return;
+        }
 
         setGuardando(true);
 
         try {
-
-            if (datosProducto.nombre.trim() === "" ||
-                datosProducto.precio.trim() === "" ||
-                datosProducto.categoria.trim() === "") {
-                toast.error("por favor ingrese los campos requeridos")
-                return;
-            }
-
-            //variantes.length === 0 detecta que no agregaste ninguna variante.
-            if (variantes.length === 0) {
-                toast.error("Por favor, agrega al menos una variante");
-                return;
-            }
-
-            // some() detecta si alguna de las variantes agregadas tiene el objeto atributos vacío.
-            if (variantes.some((variante) => Object.keys(variante.atributos).length === 0)) {
-                toast.error('¡Por favor ingresar las variantes!');
-                return
-            }
-
-
-
-            const precio = Number(datosProducto.precio);
-
-            //Number.isFinite() comprueba que el resultado sea un número válido y finito.
-
-            if (!Number.isFinite(precio) || precio <= 0) {
-                toast.error("Ingrese un precio válido mayor que cero");
-                return;
-            }
-
-            const productos = {
+            const producto = {
                 ...datosProducto,
-                precio: precio,
+                precio,
                 variantes: variantes.map((variante) => ({
                     atributos: variante.atributos,
                     stock: Number(variante.stock)
                 }))
             };
 
-            const existeStockInvalido = variantes.some((item) => Number(item.stock) <= 0);
-
-            if (existeStockInvalido) {
-                toast.error("Ingrese un stock válido mayor que cero para todas las variantes");
-                return;
-            }
-
             const formData = new FormData();
+            formData.append("producto", JSON.stringify(producto));
+            if (imagenProducto) formData.append("imagen", imagenProducto);
 
-            formData.append("producto", JSON.stringify(productos));
-
-            if (imagenProducto) {
-                formData.append("imagen", imagenProducto);
-            }
             await agregarProductos(formData);
-            toast.success('¡Productos guardado con éxito!');
+            await actualizarProductos();
 
+            toast.success("¡Producto guardado correctamente!");
 
-            await actualizarProductos()
-
-            cerrarModalProducto();
-
-            setDatosProducto({
-                nombre: "",
-                categoria: "",
-                precio: ""
-            });
-
+            setDatosProducto({ nombre: "", categoria: "", subcategoria: "", precio: "" });
+            setAtributosConfigurados([]);
+            setNuevoNombreAtributo("");
             setVariantes([]);
-
+            setImagenProducto(null);
+            setVistaPrevia("");
+            cerrarModalProducto();
         } catch (error) {
-            "Error al crear el producto:",
-                error.response?.data?.message || error.message
+            console.error("Error al crear el producto:", error);
+            toast.error(
+                error.response?.data?.message ||
+                error.response?.data?.mensaje ||
+                "No se pudo crear el producto"
+            );
         } finally {
             setGuardando(false);
         }
-
-    }
-
-
-
-    const agregarVariante = () => {
-        setVariantes([
-            ...variantes,
-            {
-                atributos: {},
-                stock: 0,
-                nombreAtributo: "",
-                valorAtributo: ""
-            }
-        ]);
-    }
-
-    const handleNombreAtributo = (e, index) => {
-
-        const nuevosAtributos = variantes.map((copiaVariantes, i) => (
-            i === index ? { ...copiaVariantes, nombreAtributo: e.target.value } : copiaVariantes
-        ))
-
-        setVariantes(nuevosAtributos)
-    }
-
-    const handleValorAtributo = (e, index) => {
-
-        const nuevoAtributoValor = variantes.map((copiaVariantes, i) => (
-            i === index ? { ...copiaVariantes, valorAtributo: e.target.value } : copiaVariantes
-        ))
-        setVariantes(nuevoAtributoValor)
-
-    }
-
-    const agregarAtributo = (index) => {
-        const nuevosAtributos = [...variantes];
-
-        const variante = {
-            ...nuevosAtributos[index],
-            atributos: {
-                ...nuevosAtributos[index].atributos
-            }
-        };
-
-        const nombreAtributo = variante.nombreAtributo.trim();
-        const valorAtributo = variante.valorAtributo.trim();
-
-        if (!nombreAtributo || !valorAtributo) {
-            return;
-        }
-
-        if (nombreAtributo in variante.atributos) {
-            return console.log(
-                `El atributo ${nombreAtributo} ya existe con el valor ${variante.atributos[nombreAtributo]}`
-            );
-        }
-
-        variante.atributos[nombreAtributo] = valorAtributo;
-
-        variante.nombreAtributo = "";
-        variante.valorAtributo = "";
-
-        nuevosAtributos[index] = variante;
-
-        setVariantes(nuevosAtributos);
     };
 
-
-    const handleStock = (e, index) => {
-
-        const valor = Number.parseInt(e.target.value);
-
-        const nuevasVariantes = variantes.map((varisanteStock, i) => {
-            return i === index ?
-                { ...varisanteStock, stock: valor } : varisanteStock
-        })
-
-
-        setVariantes(nuevasVariantes)
-
-    }
-
-    // useEffect(() => {
-    //     console.log("Variantes actualizadas:", variantes);
-    // }, [variantes]);
-
-
-
-
+    const eliminarCombinacion = (indice) => {
+        setVariantes((prev) =>
+            prev.filter((_, index) => index !== indice)
+        );
+    };
 
     return (
         <>
@@ -289,16 +406,43 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
                                             Categoría
                                         </label>
 
-                                        <input
+                                        <select
                                             id="categoria"
-                                            type="text"
                                             name="categoria"
-                                            placeholder="Ej. Ropa, Hogar, Calzado"
                                             value={datosProducto.categoria}
                                             onChange={handleChange}
                                             required
-                                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-base outline-none transition placeholder:text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                        />
+                                            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        >
+                                            <option value="">Selecciona una categoría</option>
+
+                                            {categorias.map((categoria) => (
+                                                <option key={categoria} value={categoria}>
+                                                    {categoria}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        <label htmlFor="subcategoria" className="block text-sm font-medium mb-1">
+                                            Subcategoría
+                                        </label>
+
+                                        <select
+                                            id="subcategoria"
+                                            name="subcategoria"
+                                            value={datosProducto.subcategoria}
+                                            onChange={handleChange}
+                                            disabled={!datosProducto.categoria}
+                                            className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-100"
+                                        >
+                                            <option value="">Selecciona una subcategoría</option>
+
+                                            {(subcategorias[datosProducto.categoria] || []).map((subcategoria) => (
+                                                <option key={subcategoria} value={subcategoria}>
+                                                    {subcategoria}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <div>
@@ -404,252 +548,243 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
 
                             </section>
 
-                            {/* Variantes */}
-                            <section className="space-y-4 border-t border-gray-100 pt-5">
-
-                                {/* Encabezado de variantes */}
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                                    <div>
-                                        <h3 className="text-base font-semibold text-gray-800">
-                                            Variantes del producto
-                                        </h3>
-
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            Define características como color, talla, material o tamaño.
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={agregarVariante}
-                                        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                    >
-                                        <span className="text-lg leading-none">
-                                            +
-                                        </span>
-
-                                        Agregar variante
-                                    </button>
-
+                            {/* Variantes configurables */}
+                            <section className="space-y-5 border-t border-gray-100 pt-5">
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-800">
+                                        Opciones e inventario
+                                    </h3>
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Agrega atributos como color, talla, material o dimensiones. Después genera las combinaciones y asigna el stock de cada una.
+                                    </p>
                                 </div>
 
-                                {/* Estado vacío */}
-                                {variantes.length === 0 && (
-                                    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                    <label htmlFor="tipoAtributoSeleccionado" className="mb-2 block text-sm font-medium text-gray-700">
+                                        Característica
+                                    </label>
+                                    <div className="flex flex-col gap-2 sm:flex-row">
+                                        <select
+                                            id="tipoAtributoSeleccionado"
+                                            value={tipoAtributoSeleccionado}
+                                            onChange={(e) => setTipoAtributoSeleccionado(e.target.value)}
+                                            className="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        >
+                                            <option value="Color">Color</option>
+                                            <option value="Talla">Talla</option>
+                                            <option value="Material">Material</option>
+                                            <option value="Dimensiones">Dimensiones</option>
+                                            <option value="Capacidad">Capacidad</option>
+                                            <option value="__personalizado">Otra característica…</option>
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (tipoAtributoSeleccionado === "__personalizado") {
+                                                    agregarAtributoConfigurado();
+                                                } else {
+                                                    agregarAtributoConfigurado(tipoAtributoSeleccionado);
+                                                }
+                                            }}
+                                            className="min-h-11 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                                        >
+                                            + Agregar característica
+                                        </button>
+                                    </div>
 
-                                        <div className="mb-2 text-3xl">
-                                            📦
+                                    {tipoAtributoSeleccionado === "__personalizado" && (
+                                        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                            <input
+                                                type="text"
+                                                value={nuevoNombreAtributo}
+                                                onChange={(e) => setNuevoNombreAtributo(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        e.preventDefault();
+                                                        agregarAtributoConfigurado();
+                                                    }
+                                                }}
+                                                placeholder="Escribe el nombre, por ejemplo: Estampado"
+                                                className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                            />
                                         </div>
+                                    )}
+                                </div>
 
-                                        <p className="text-sm font-medium text-gray-700">
-                                            Todavía no has agregado variantes
+                                {atributosConfigurados.length === 0 && (
+                                    <div className="rounded-xl border border-dashed border-gray-300 px-4 py-7 text-center">
+                                        <div className="mb-2 text-3xl">🎨</div>
+                                        <p className="text-sm font-medium text-gray-700">Todavía no hay características</p>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Empieza agregando Color, Talla u otra característica del producto.
                                         </p>
-
-                                        <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-gray-500">
-                                            Agrega una variante para registrar sus atributos y las unidades disponibles.
-                                        </p>
-
                                     </div>
                                 )}
 
-                                {/* Lista de variantes */}
-                                <div className="space-y-4">
-
-                                    {variantes.map((variante, index) => (
-
-                                        <div
-                                            key={index}
-                                            className="rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5"
-                                        >
-
-                                            {/* Encabezado de la tarjeta */}
-                                            <div className="mb-4 flex items-center justify-between gap-3">
-
+                                <div className="space-y-3">
+                                    {atributosConfigurados.map((atributo, index) => (
+                                        <div key={atributo.nombre} className="rounded-xl border border-gray-200 bg-white p-4">
+                                            <div className="mb-3 flex items-center justify-between gap-3">
                                                 <div>
-                                                    <h4 className="text-sm font-semibold text-gray-800">
-                                                        Variante {index + 1}
-                                                    </h4>
-
-                                                    <p className="mt-1 text-xs text-gray-500">
-                                                        Configura sus características y stock.
+                                                    <h4 className="font-semibold text-gray-800">{atributo.nombre}</h4>
+                                                    <p className="text-xs text-gray-500">
+                                                        {atributo.valores.length} opción(es)
                                                     </p>
                                                 </div>
-
-                                                <span className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600">
-                                                    {Object.keys(variante.atributos || {}).length} atributos
-                                                </span>
-
-                                            </div>
-
-                                            {/* Atributos agregados */}
-                                            <div className="mb-4">
-
-                                                <p className="mb-2 text-xs font-medium text-gray-600">
-                                                    Atributos agregados
-                                                </p>
-
-                                                {Object.keys(variante.atributos || {}).length > 0 ? (
-
-                                                    <div className="flex flex-wrap gap-2">
-
-                                                        {Object.entries(variante.atributos || {}).map(
-                                                            ([nombre, valor]) => (
-
-                                                                <span
-                                                                    key={nombre}
-                                                                    className="inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-800"
-                                                                >
-                                                                    <span className="font-semibold">
-                                                                        {nombre}:
-                                                                    </span>
-
-                                                                    <span className="break-words">
-                                                                        {valor}
-                                                                    </span>
-                                                                </span>
-
-                                                            )
-                                                        )}
-
-                                                    </div>
-
-                                                ) : (
-
-                                                    <p className="rounded-lg border border-gray-200 bg-white px-3 py-3 text-xs text-gray-400">
-                                                        Aquí aparecerán los atributos que agregues.
-                                                    </p>
-
-                                                )}
-
-                                            </div>
-
-                                            {/* Formulario de atributos */}
-                                            <div className="rounded-xl border border-gray-200 bg-white p-3 sm:p-4">
-
-                                                <div className="mb-3">
-                                                    <h5 className="text-sm font-semibold text-gray-800">
-                                                        Agregar característica
-                                                    </h5>
-
-                                                    <p className="mt-1 text-xs text-gray-500">
-                                                        Escribe el nombre del atributo y su valor.
-                                                    </p>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-
-                                                    {/* Nombre del atributo */}
-                                                    <div>
-                                                        <label
-                                                            htmlFor={`nombreAtributo-${index}`}
-                                                            className="mb-1.5 block text-sm font-medium text-gray-700"
-                                                        >
-                                                            Nombre del atributo
-                                                        </label>
-
-                                                        <input
-                                                            id={`nombreAtributo-${index}`}
-                                                            type="text"
-                                                            placeholder="Ej. Color, Talla, Material"
-                                                            value={variante.nombreAtributo}
-                                                            onChange={(e) =>
-                                                                handleNombreAtributo(e, index)
-                                                            }
-                                                            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition placeholder:text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                        />
-
-                                                        <p className="mt-1 text-xs text-gray-500">
-                                                            ¿Qué característica deseas indicar?
-                                                        </p>
-                                                    </div>
-
-                                                    {/* Valor del atributo */}
-                                                    <div>
-                                                        <label
-                                                            htmlFor={`valorAtributo-${index}`}
-                                                            className="mb-1.5 block text-sm font-medium text-gray-700"
-                                                        >
-                                                            Valor del atributo
-                                                        </label>
-
-                                                        <input
-                                                            id={`valorAtributo-${index}`}
-                                                            type="text"
-                                                            placeholder="Ej. Blanco, M, Cuero"
-                                                            value={variante.valorAtributo}
-                                                            onChange={(e) =>
-                                                                handleValorAtributo(e, index)
-                                                            }
-                                                            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none transition placeholder:text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                        />
-
-                                                        <p className="mt-1 text-xs text-gray-500">
-                                                            Escribe el valor correspondiente.
-                                                        </p>
-                                                    </div>
-
-                                                </div>
-
                                                 <button
                                                     type="button"
-                                                    onClick={() => agregarAtributo(index)}
-                                                    className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200 sm:w-auto"
+                                                    onClick={() => eliminarAtributo(index)}
+                                                    className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                                                 >
-                                                    + Agregar atributo
+                                                    Eliminar
                                                 </button>
-
                                             </div>
 
-                                            {/* Stock */}
-                                            <div className="mt-4">
-
-                                                <label
-                                                    htmlFor={`stock-${index}`}
-                                                    className="mb-1.5 block text-sm font-medium text-gray-700"
-                                                >
-                                                    Stock disponible
-                                                </label>
-
-                                                <div className="relative sm:max-w-xs">
-
-                                                    <input
-                                                        id={`stock-${index}`}
-                                                        type="number"
-                                                        min="0"
-                                                        step="1"
-                                                        placeholder="Ej. 10"
-                                                        value={variante.stock}
-                                                        onChange={(e) => {
-                                                            const nuevasVariantes = variantes.map(
-                                                                (item, i) =>
-                                                                    i === index
-                                                                        ? {
-                                                                            ...item,
-                                                                            stock: e.target.value
-                                                                        }
-                                                                        : item
+                                            {opcionesPredeterminadas[atributo.nombre] && opcionesPredeterminadas[atributo.nombre].length > 0 && (
+                                                <div className="mb-3">
+                                                    <p className="mb-2 text-xs font-medium text-gray-500">Opciones sugeridas · selecciona para agregarlas</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {opcionesPredeterminadas[atributo.nombre].map((valor) => {
+                                                            const seleccionado = atributo.valores.some(
+                                                                (actual) => actual.toLowerCase() === valor.toLowerCase()
                                                             );
-
-                                                            setVariantes(nuevasVariantes);
-                                                        }}
-                                                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-base outline-none transition placeholder:text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                                    />
-
+                                                            return (
+                                                                <button
+                                                                    key={valor}
+                                                                    type="button"
+                                                                    disabled={seleccionado}
+                                                                    onClick={() => agregarOpcionPredeterminada(index, valor)}
+                                                                    className={`min-h-10 rounded-full border px-3 py-2 text-sm font-medium transition ${seleccionado
+                                                                        ? "cursor-default border-blue-200 bg-blue-100 text-blue-400"
+                                                                        : "border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50"
+                                                                        }`}
+                                                                >
+                                                                    {valor}{seleccionado ? " ✓" : ""}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
+                                            )}
 
-                                                <p className="mt-1 text-xs text-gray-500">
-                                                    Cantidad de unidades disponibles de esta variante.
-                                                </p>
-
+                                            <div className="mb-3 flex flex-wrap gap-2">
+                                                {atributo.valores.map((valor) => (
+                                                    <button
+                                                        key={valor}
+                                                        type="button"
+                                                        onClick={() => eliminarOpcion(index, valor)}
+                                                        title={`Quitar ${valor}`}
+                                                        className="inline-flex min-h-10 items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                                                    >
+                                                        {valor}
+                                                        <span aria-hidden="true">×</span>
+                                                    </button>
+                                                ))}
+                                                {atributo.valores.length === 0 && (
+                                                    <p className="text-xs text-gray-400">Agrega una o más opciones abajo.</p>
+                                                )}
                                             </div>
 
+                                            <div className="flex flex-col gap-2 sm:flex-row">
+                                                <input
+                                                    type="text"
+                                                    value={atributo.nuevoValor}
+                                                    onChange={(e) => actualizarNuevoValor(index, e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault();
+                                                            agregarOpcion(index);
+                                                        }
+                                                    }}
+                                                    placeholder={`Nueva opción para ${atributo.nombre}`}
+                                                    className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => agregarOpcion(index)}
+                                                    className="min-h-11 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                                >
+                                                    + Agregar opción
+                                                </button>
+                                            </div>
                                         </div>
-
                                     ))}
-
                                 </div>
 
+                                <button
+                                    type="button"
+                                    onClick={generarCombinaciones}
+                                    disabled={!atributosConfigurados.some((atributo) => atributo.valores.length > 0)}
+                                    className="min-h-11 w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 sm:w-auto"
+                                >
+                                    Generar combinaciones
+                                </button>
+
+                                {variantes.length > 0 && (
+                                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                                        <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+                                            <h4 className="font-semibold text-gray-800">Stock por combinación</h4>
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                Se generaron {variantes.length} combinaciones. Escribe cuántas unidades tienes de cada una.
+                                            </p>
+                                        </div>
+
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[360px] text-left text-sm">
+                                                <thead className="bg-white text-xs uppercase tracking-wide text-gray-500">
+                                                    <tr>
+                                                        <th className="px-4 py-3">Características</th>
+                                                        <th className="w-32 px-4 py-3">Stock</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {variantes.map((variante, index) => (
+                                                        <tr key={`${JSON.stringify(variante.atributos)}-${index}`} className="bg-white">
+                                                            <td className="px-4 py-3">
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {Object.entries(variante.atributos).map(([nombre, valor]) => (
+                                                                        <span
+                                                                            key={nombre}
+                                                                            className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700"
+                                                                        >
+                                                                            <strong className="mr-1">{nombre}:</strong> {valor}
+                                                                        </span>
+
+                                                                    ))}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => eliminarCombinacion(index)}
+                                                                        className="rounded-lg px-3 py-2 text-red-600 hover:bg-red-50"
+                                                                        title="Eliminar combinación"
+                                                                        aria-label="Eliminar combinación"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="1"
+                                                                    inputMode="numeric"
+                                                                    aria-label={`Stock para ${Object.values(variante.atributos).join(" ")}`}
+                                                                    value={variante.stock}
+                                                                    onChange={(e) => actualizarStock(index, e.target.value)}
+                                                                    placeholder="0"
+                                                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                                                />
+                                                            </td>
+                                                        </tr>
+
+                                                    ))}
+
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
                             </section>
 
                             {/* Botones de acción */}
@@ -667,8 +802,8 @@ export const ModalAgregarProducto = ({ openModalProducto, cerrarModalProducto, a
                                     type="submit"
                                     disabled={guardando}
                                     className={`min-h-11 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-200 ${guardando
-                                            ? "cursor-not-allowed bg-gray-400"
-                                            : "bg-blue-600 hover:bg-blue-700"
+                                        ? "cursor-not-allowed bg-gray-400"
+                                        : "bg-blue-600 hover:bg-blue-700"
                                         }`}
                                 >
                                     {guardando ? "Guardando producto..." : "Crear producto"}

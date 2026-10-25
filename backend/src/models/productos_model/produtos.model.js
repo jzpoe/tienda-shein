@@ -27,6 +27,10 @@ const poductoSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    subcategoria: {
+    type: String,
+    required: true
+},
     precio: {
         type: Number,
         required: true,

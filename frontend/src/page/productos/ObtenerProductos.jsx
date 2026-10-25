@@ -12,6 +12,7 @@ export const ObtenerProductos = () => {
     const [modalAgregarProductosOpen, setModalAgregarProductosOpen] = useState(false);
     const [modalEditarOpen, setModalEditarOpen] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState(null);
+    const [variantesExpandidas, setVariantesExpandidas] = useState({});
 
     const productosObtener = async () => {
 
@@ -145,7 +146,7 @@ export const ObtenerProductos = () => {
                                     <img
                                         src={`https://api-inventario-shein.rodantech.co${productosObtenidos.imagen}`}
                                         alt={productosObtenidos.nombre}
-                                        className="w-full h-56 object-contain rounded-xl bg-gray-50"
+                                        className="w-full h-36 object-contain rounded-lg bg-gray-50"
                                     />
                                 </div>
 
@@ -168,60 +169,64 @@ export const ObtenerProductos = () => {
                                 </div>
 
 
-                                <div className="mt-5">
+                                <div className="mt-4">
 
-                                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                        Variantes
-                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setVariantesExpandidas((prev) => ({
+                                                ...prev,
+                                                [productosObtenidos._id]: !prev[productosObtenidos._id]
+                                            }))
+                                        }
+                                        className="flex w-full items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <span>
+                                            Variantes ({productosObtenidos.variantes.length})
+                                        </span>
 
-                                    <div className="space-y-3">
+                                        <span>
+                                            {variantesExpandidas[productosObtenidos._id] ? "▲" : "▼"}
+                                        </span>
+                                    </button>
 
-                                        {
-                                            productosObtenidos.variantes.map((variante) => (
+                                    {variantesExpandidas[productosObtenidos._id] && (
+                                        <div className="mt-2 space-y-2">
+
+                                            {productosObtenidos.variantes.map((variante) => (
 
                                                 <div
                                                     key={variante._id}
-                                                    className="bg-gray-50 rounded-xl p-3"
+                                                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-3 py-2"
                                                 >
 
-                                                    <div className="flex justify-between items-center mb-2">
+                                                    <div className="flex flex-wrap gap-1.5">
 
-                                                        <span className="text-sm font-medium text-gray-700">
-                                                            Variante
-                                                        </span>
+                                                        {Object.entries(variante.atributos).map(
+                                                            ([nombre, valor]) => (
 
-                                                        <span className="text-sm font-semibold text-gray-800">
-                                                            Stock: {variante.stock}
-                                                        </span>
+                                                                <span
+                                                                    key={nombre}
+                                                                    className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600"
+                                                                >
+                                                                    {nombre}: {valor}
+                                                                </span>
 
-                                                    </div>
-
-
-                                                    <div className="flex flex-wrap gap-2">
-
-                                                        {
-                                                            Object.entries(variante.atributos).map(
-                                                                ([nombre, valor]) => (
-
-                                                                    <span
-                                                                        key={nombre}
-                                                                        className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs text-gray-600"
-                                                                    >
-                                                                        {nombre}: {valor}
-                                                                    </span>
-
-                                                                )
                                                             )
-                                                        }
+                                                        )}
 
                                                     </div>
+
+                                                    <span className="shrink-0 text-xs font-semibold text-gray-700">
+                                                        Stock: {variante.stock}
+                                                    </span>
 
                                                 </div>
 
-                                            ))
-                                        }
+                                            ))}
 
-                                    </div>
+                                        </div>
+                                    )}
 
                                 </div>
 

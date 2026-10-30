@@ -31,6 +31,11 @@ const poductoSchema = new mongoose.Schema({
     type: String,
     required: true
 },
+costoCompra: {
+    type: Number,
+    required: true,
+    min: 0
+},
     precio: {
         type: Number,
         required: true,

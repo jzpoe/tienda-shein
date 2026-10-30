@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Pencil, Trash2 } from 'lucide-react';
-import { eliminarProductos, obtenerProductos } from "../../services/productosServices"
+import { eliminarProductos, obtenerProductos, editarProducto } from "../../services/productosServices"
 import { ModalAgregarProducto } from "../../modal/ModalAgregarProducto/ModalAgregarProducto";
 import { EditarProducto } from "../../modal/modalEditarProducto";
 import Swal from "sweetalert2";
@@ -29,6 +29,32 @@ export const ObtenerProductos = () => {
 
 
     }
+
+    const actualizarProducto = async (datos) => {
+    try {
+        await editarProducto(productoSeleccionado._id, datos);
+
+        await productosObtener();
+        cerrarModalEditar();
+
+        Swal.fire({
+            title: "¡Actualizado!",
+            text: "El producto se actualizó correctamente.",
+            icon: "success",
+            confirmButtonColor: "#2563eb"
+        });
+
+    } catch (error) {
+        console.error("Error al actualizar el producto:", error);
+
+        Swal.fire({
+            title: "Error",
+            text: error.response?.data?.message || "No se pudo actualizar el producto.",
+            icon: "error",
+            confirmButtonColor: "#2563eb"
+        });
+    }
+};
 
     useEffect(() => {
         productosObtener()
@@ -282,6 +308,7 @@ export const ObtenerProductos = () => {
                     open={modalEditarOpen}
                     productos={productoSeleccionado}
                     cerrarModalEditar={cerrarModalEditar}
+                    actualizarProducto={actualizarProducto}
 
                 />
 

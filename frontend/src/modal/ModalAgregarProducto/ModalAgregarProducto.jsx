@@ -11,6 +11,7 @@ export const ModalAgregarProducto = ({
         nombre: "",
         categoria: "",
         subcategoria: "",
+        costoCompra: "",
         precio: ""
     });
 
@@ -250,14 +251,27 @@ export const ModalAgregarProducto = ({
         e.preventDefault();
         if (guardando) return;
 
-        if (!datosProducto.nombre.trim() || !datosProducto.categoria.trim() || !datosProducto.precio.trim()) {
-            toast.error("Completa el nombre, la categoría y el precio");
+        if (
+            !datosProducto.nombre.trim() ||
+            !datosProducto.categoria.trim() ||
+            !datosProducto.precio.trim() ||
+            datosProducto.costoCompra === ""
+        ) {
+            toast.error("Completa el nombre, la categoría, el costo y el precio");
             return;
         }
 
+        const costoCompra = Number(datosProducto.costoCompra);
         const precio = Number(datosProducto.precio);
+
         if (!Number.isFinite(precio) || precio <= 0) {
             toast.error("Ingresa un precio válido mayor que cero");
+            return;
+        }
+
+
+        if (!Number.isFinite(costoCompra) || costoCompra < 0) {
+            toast.error("Ingresa un costo de compra válido");
             return;
         }
 
@@ -283,6 +297,7 @@ export const ModalAgregarProducto = ({
         try {
             const producto = {
                 ...datosProducto,
+                costoCompra,
                 precio,
                 variantes: variantes.map((variante) => ({
                     atributos: variante.atributos,
@@ -291,6 +306,7 @@ export const ModalAgregarProducto = ({
             };
 
             const formData = new FormData();
+            
             formData.append("producto", JSON.stringify(producto));
             if (imagenProducto) formData.append("imagen", imagenProducto);
 
@@ -299,7 +315,7 @@ export const ModalAgregarProducto = ({
 
             toast.success("¡Producto guardado correctamente!");
 
-            setDatosProducto({ nombre: "", categoria: "", subcategoria: "", precio: "" });
+            setDatosProducto({ nombre: "", categoria: "", subcategoria: "", costoCompra: "", precio: "" });
             setAtributosConfigurados([]);
             setNuevoNombreAtributo("");
             setVariantes([]);
@@ -446,6 +462,30 @@ export const ModalAgregarProducto = ({
                                     </div>
 
                                     <div>
+
+                                        <label
+                                            htmlFor="costoCompra"
+                                            className="mb-1.5 mt-4 block text-sm font-medium text-gray-700"
+                                        >
+                                            Costo de compra
+                                        </label>
+
+                                        <input
+                                            id="costoCompra"
+                                            type="number"
+                                            name="costoCompra"
+                                            min="0"
+                                            step="any"
+                                            placeholder="Ej. 30000"
+                                            value={datosProducto.costoCompra}
+                                            onChange={handleChange}
+                                            required
+                                            className="w-full rounded-xl border border-gray-300 px-4 py-3 text-base outline-none transition placeholder:text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                        />
+
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Ingresa cuánto te costó adquirir el producto.
+                                        </p>
                                         <label
                                             htmlFor="precio"
                                             className="mb-1.5 block text-sm font-medium text-gray-700"
@@ -465,6 +505,7 @@ export const ModalAgregarProducto = ({
                                             required
                                             className="w-full rounded-xl border border-gray-300 px-4 py-3 text-base outline-none transition placeholder:text-sm placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                         />
+
 
                                         <p className="mt-1 text-xs text-gray-500">
                                             Ingresa el precio del producto.

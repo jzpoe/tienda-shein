@@ -23,6 +23,7 @@ router.get("/productos",authMiddleware, obtener_productos);
 router.patch("/productoS/:id",authMiddleware, editar_producto)
 router.delete("/productos/:id",authMiddleware,  productos_eliminar)
 
+
 //crear usuarios 
 
 router.post('/usuarios', crear_usuario)

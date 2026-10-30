@@ -16,3 +16,8 @@ export const eliminarProductos = async (id) => {
     return response.data;
 };
 
+export const editarProducto = async (id, datos) => {
+    const response = await api.patch(`/productos/${id}`, datos);
+    return response.data;
+};
+

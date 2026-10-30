@@ -22,8 +22,18 @@ export const editarProducto = async (id, datos) => {
 };
 
 
+
+
 export const registrarVenta = async (datos) => {
     const response = await api.post("/ventas", datos);
+    return response.data;
+};
+
+export const obtenerVentas = async (filtros = {}) => {
+    const response = await api.get("/ventas", {
+        params: filtros
+    });
+
     return response.data;
 };
 

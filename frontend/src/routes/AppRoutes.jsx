@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { DashboardLayout } from "../layout/DashboardLayout";
 import { ObtenerProductos } from "../page/productos/ObtenerProductos";
 import { FormularioVenta } from "../page/ventas/FormularioVenta";
+import { HistorialVentas } from "../page/ventas/HistorialVentas";
 
 
 
@@ -26,6 +27,7 @@ export const AppRoutes = () => {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/productos" element={<ObtenerProductos />} />
                 <Route path="/ventas" element={<FormularioVenta />} />
+                <Route path="/historial-ventas" element={<HistorialVentas />} />
                 </Route>
 
 

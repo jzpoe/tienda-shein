@@ -38,6 +38,8 @@ router.post("/registro-negocio", registrar_negocio);
 
 // Registrar una venta
 router.post("/ventas", authMiddleware, registrar_venta);
+// Consultar historial de ventas
+router.get("/ventas", authMiddleware, obtener_ventas);
 
 
 export default router

@@ -21,7 +21,13 @@ export const Sidebar = () => {
             nombre: "Ventas",
             ruta: "/ventas",
             icono: Package
+        },
+        {
+            nombre: "Historial de Ventas",
+            ruta: "/historial-ventas",
+            icono: Package
         }
+        
     ];
 
     return (

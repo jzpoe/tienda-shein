@@ -12,6 +12,7 @@ import { auth_administrador } from "../auth_middleware/auth.administrador.js";
 import { obtener_usuarios } from "../controllers/usuario/usuarios.verUsuarios.js";
 import { registrar_negocio } from "../controllers/negocio_controller/registrar_negocio.controller.js";
 import subirImagen from "../image_middleware/subirImagen.js";
+import { registrar_venta } from "../controllers/ventas/ventas.registrar.js";
 
 const router = express.Router();
 
@@ -34,6 +35,9 @@ router.get("/perfil", authMiddleware, perfil);
 
 
 router.post("/registro-negocio", registrar_negocio);
+
+// Registrar una venta
+router.post("/ventas", authMiddleware, registrar_venta);
 
 
 export default router

@@ -4,6 +4,7 @@ import { Dashboard } from "../page/Dashboard/Dashboard";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { DashboardLayout } from "../layout/DashboardLayout";
 import { ObtenerProductos } from "../page/productos/ObtenerProductos";
+import { FormularioVenta } from "../page/ventas/FormularioVenta";
 
 
 
@@ -24,6 +25,7 @@ export const AppRoutes = () => {
                 >
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/productos" element={<ObtenerProductos />} />
+                <Route path="/ventas" element={<FormularioVenta />} />
                 </Route>
 
 

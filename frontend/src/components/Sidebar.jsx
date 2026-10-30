@@ -16,6 +16,11 @@ export const Sidebar = () => {
             nombre: "Productos",
             ruta: "/productos",
             icono: Package
+        },
+        {
+            nombre: "Ventas",
+            ruta: "/ventas",
+            icono: Package
         }
     ];
 

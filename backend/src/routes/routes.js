@@ -13,6 +13,7 @@ import { obtener_usuarios } from "../controllers/usuario/usuarios.verUsuarios.js
 import { registrar_negocio } from "../controllers/negocio_controller/registrar_negocio.controller.js";
 import subirImagen from "../image_middleware/subirImagen.js";
 import { registrar_venta } from "../controllers/ventas/ventas.registrar.js";
+import { obtener_ventas } from "../controllers/ventas/ventas.obtener.js";
 
 const router = express.Router();
 
